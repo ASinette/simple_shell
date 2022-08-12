@@ -1,123 +1,76 @@
 #include "shell.h"
+
 /**
- * _setEnviron - set environment value
- * @ptrEnv: environment linked list
- * @ptrName: environment name
- * @ptrV: environment value
- * @ptrOW: overwrite
- */
+ * fork_fail - function that handles a fork fail
+ * Return: Nothing
+*/
 
-void _setEnviron(serverEnv_t *ptrEnv, char *ptrName, char *ptrV, int ptrOW)
+void fork_fail(void)
 {
-serverEnv_t *e_node;
-char *tmp;
-
-if (ptrName == NULL || ptrV == NULL)
-return;
-
-e_node = _getenv(ptrEnv, ptrName);
-
-if (e_node == NULL)
-{tmp = _genGlobal(ptrName, ptrV);
-_AddNodeEnd(&ptrEnv, tmp);
-free(tmp);
-}
-else if (ptrOW == 1)
-{
-free(e_node->value);
-e_node->value = _strdup(ptrV);
-}
+	perror("Error: ");
+	exit(EXIT_FAILURE);
 }
 
 /**
- * _cDir - change current directory
- * @ptrData: data structure
- */
+* build_message - Function to write an error message
+*@av: argument vector
+*@fir_com: first command to print if not found
+*@count: number of times executed
+*Return: Nothing(void)
+*/
 
-void _cDir(server_t *ptrData)
+void build_message(char **av, char *fir_com, int count)
 {
-	char cD[500];
+	int num_length = 1, cp, mult = 1;
 
-	getcwd(cD, 500);
+	write(STDERR_FILENO, av[0], _strlen(av[0]));
+	write(STDERR_FILENO, ": ", 2);
+	cp = count;
 
-	if (ptrData == NULL)
-		return;
+	while (cp >= 10)
+	{
+		cp /= 10;
+		mult *= 10;
+		num_length++;
+	}
 
-	if (
-		!ptrData->argument[1] ||
-		_strcmp(ptrData->argument[1], "~") == 0 ||
-		_strcmp(ptrData->argument[1], "~/") == 0
-	)
-		_cDHome(ptrData, cD);
-	else if (_strcmp(ptrData->argument[1], "-") == 0)
-		_cD_prev(ptrData, cD);
-	else
-		_RandomDir(ptrData, cD);
+	while (num_length > 1)
+	{
+		if ((count / mult) < 10)
+			_puterror((count / mult + '0'));
+		else
+			_puterror((count / mult) % 10 + '0');
+		--num_length;
+		mult /= 10;
+	}
+
+	_puterror(count % 10 + '0');
+	write(STDERR_FILENO, ": ", 2);
+	write(STDERR_FILENO, fir_com, _strlen(fir_com));
+	write(STDERR_FILENO, ": not found\n", 12);
 }
 
 /**
- * _cDHome - change to home directory
- * @chptr - struct pointer
- * @ptrCd - current directory
- */
+* _puterror - Prints a char
+*@c: character to write
+*Return: int to print
+*/
 
-void _cDHome(server_t *chptr, char *ptrcd)
+int _puterror(char c)
 {
-serverEnv_t *newcdir;
-
-newcdir = _getenv(chptr->env, "Home");
-
-if (access(newcdir->value, R_OK | W_OK) == 0)
-{
-chdir(newcdir->value);
-_setEnviron(chptr->env, "OLDPWD", ptrcd, 1);
-}
-else
-{
-perror(newcdir->value);
-}
+	return (write(STDERR_FILENO, &c, 1));
 }
 
 /**
- * _cD_prev - change to previous directory
- *
- * @ptrD: data structure
- * @ptrCurDir: current directory path
- */
-void _cD_prev(server_t *ptrD, char *ptrCurDir)
-{
-serverEnv_t *Directory;
+* end_file - function to control the interrupt signal
+*@buffer: buffer array created by new line
+*Return: Nothing(void)
+*/
 
-Directory = _getenv(ptrD->env, "OLDPWD");
-
-if (access(Directory->value, R_OK | W_OK) == 0)
+void end_file(char *buffer)
 {
-chdir(Directory->value);
-_setEnviron(ptrD->env, "OLDPWD", ptrCurDir, 1);
-}
-else
-{
-perror(Directory->value);
-}
-}
-
-/**
- * _RandomDir - change to any directory
- *
- * @varptr: data structure
- * @curDir: current directory path
- */
-void _RandomDir(server_t *varptr, char *curDir)
-{
-char *Directory;
-
-Directory = varptr->argument[1];
-
-if (access(Directory, R_OK | W_OK) == 0)
-{
-chdir(Directory);
-_setEnviron(varptr->env, "OLDPWD", curDir, 1);
-}
-else
-perror(Directory);
+	if (isatty(STDIN_FILENO))
+		write(STDOUT_FILENO, "\n", 1);
+	free(buffer);
+	exit(0);
 }
