@@ -1,95 +1,153 @@
 #include "shell.h"
 
 /**
- * _printEnviron - prints environ variables
- * @_Env: variable list
- */
-
-void _printEnviron(serverEnv_t *_Env)
+* find_num_dir - Function to find the total number of directories
+*@path: path string
+*Return: number of directories in the path
+*/
+unsigned int find_num_dir(char *path)
 {
-if (_Env == NULL)
-return;
+	unsigned int i = 0, flag = 0, num_dir = 0;
 
-_write(_Env->pathName);
-_write("=");
-if (_Env->value != NULL)
-_write(_Env->value);
-_write("\n");
-_printEnviron(_Env->next);
+	while (path[i])
+	{
+		if (path[i] != ':')
+			flag = 1;
+
+		if ((flag && path[i + 1] == ':') || (flag && path[i + 1] == '\0'))
+		{
+			num_dir++;
+			flag = 0;
+		}
+		i++;
+		}
+
+		return (num_dir);
 }
 
 /**
- * _Environ - prints the environ variable
- *
- * @ptr: data structure
- */
+* store_e_variables - Function that create a double pointer array, where stores
+*each path directory as a pointer
+*@fir_com: first command inserted in the prompt
+*@environ: enviroment variables
+*Return: enviroment
+*/
 
-void _Environ(server_t *ptr)
+char **store_e_variables(char *fir_com, char **environ)
 {
-_printEnviron(ptr->env);
+	char **directories, *path_env, *directory;
+	unsigned int length, i = 0;
+	int dir_length, command_length;
+
+	path_env = _getenv("PATH", environ);
+	length = find_num_dir(path_env);
+	directories = malloc(sizeof(char *) * (length + 1));
+	if (directories == NULL)
+		return (NULL);
+
+	directory = strtok(path_env, ":");
+
+	while (directory != NULL)
+	{
+		dir_length = _strlen(directory);
+		command_length = _strlen(fir_com);
+		directories[i] = malloc(sizeof(char *) *
+		(dir_length + command_length + 2));
+		if (directories[i] == NULL)
+		{
+			freearv(directories);
+			return (NULL);
+		}
+			_strncpcommand(directories[i], directory, fir_com,
+			dir_length, command_length);
+			i++;
+		directory = strtok(NULL, ":");
+	}
+
+		directories[i] = NULL;
+
+	return (directories);
 }
 
 /**
- * _getenv - get environ variable
- * @ptrEnv: head node
- * @ptrName: variable name
- *
- * return: variable node
- */
+* _getenv - Function to get the enviroment variable
+*@name: name of the enviroment variable
+*@environ: enviroment variables
+*Return: the value associated with the variable
+*/
 
-serverEnv_t *_getenv(serverEnv_t *ptrEnv, char *ptrName)
+char *_getenv(const char *name, char **environ)
 {
-if (ptrEnv == NULL)
-return (NULL);
+	char *env_value, *cp_name;
+	unsigned int i = 0, length;
 
-if (_strcmp(ptrEnv->pathName, ptrName) == 0)
-return (ptrEnv);
+	/*find the length of the argument and malloc space for it*/
+	length =  _strlen_const(name);
 
-return (_getenv(ptrEnv->next, ptrName));
+	cp_name = malloc(sizeof(char) * length + 1);
+	if (cp_name == NULL)
+		return (NULL);
+
+	/*copy the contents of the name argument to cp_name*/
+	_strncpyconst(cp_name, name, length);
+
+	/*finding the enviroment variable*/
+	env_value = strtok(environ[i], "=");
+	while (environ[i])
+	{
+		if (_strcmp(env_value, cp_name))
+			{																																										env_value = strtok(NULL, "\n");
+			free(cp_name);
+			return (env_value);
+		}
+		i++;
+		env_value = strtok(environ[i], "=");
+	}
+	free(cp_name);
+	return (NULL);
 }
 
 /**
- * _EnvName - Returns the environ name
- * @ptrVar: Name
- *
- * Return: Environ name
- */
+* _strncpcommand - Function that copies the path and append a / and command
+*@dest: destination to save
+*@src: source
+*@command: command to append
+*@n: length of destination
+*@c: length of command
+*Return: addres of dest
+*/
 
-char *_EnvName(char *ptrvar)
+char *_strncpcommand(char *dest, char *src, char *command, int n, int c)
 {
-char **tptr, *name;
+	int i, j;
 
-tptr = _strtow(ptrvar, "=", NULL);
+	for (i = 0; i < n && src[i] != '\0'; i++)
+		dest[i] = src[i];
+	/*append "/" and "command" to the src*/
+	dest[i] = '/';
+	i++;
 
-if (tptr == NULL)
-return (NULL);
-
-name = _strdup(tptr[0]);
-freeArgument(tptr);
-tptr = NULL;
-
-return (name);
+	for (j = 0; j < c && command[j] != '\0'; j++, i++)
+		dest[i] = command[j];
+	dest[i] = '\0';
+	return (dest);
 }
 
 /**
- * _EnvValue - return environ value
- * @ptrVariable: name
- *
- * Return: environ value
- */
+* print_env - Function to print all enviroment variables
+*@environ: enviroment variables for the user
+*Return: Nothing(void)
+*/
 
-char *EnvValue(char *ptrvariable)
+void print_env(char **environ)
 {
-char **cptr, *name;
+	unsigned int i = 0, length;
 
-cptr = _strtow(ptrvariable, "=", NULL);
-
-if (cptr == NULL)
-return(NULL);
-
-name = _strdup(cptr[1]);
-freeArgument(cptr);
-cptr = NULL;
-
-return (name);
+	while (environ[i])
+	{
+		length = _strlen(environ[i]);
+		write(STDOUT_FILENO, environ[i], length);
+		write(STDOUT_FILENO, "\n", 1);
+		i++;
+	}
 }
