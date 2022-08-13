@@ -1,32 +1,75 @@
 #include "shell.h"
 
 /**
- * _write - prints a character to stdout
- * @c: a character to print
- * 
- * Return: numebr of printed characters
- */
+* null_command - Free the buffer created
+*@buffer: buffer taked from getline
+*Return: Nothing(void)
+*/
 
-int _putchar(char c)
+void null_command(char *buffer)
 {
-return(write(STDIN_FILENO, &c, 1));
+	free(buffer);
+	exit(EXIT_SUCCESS);
 }
 
 /**
- * _printstr - prints all characters from string to stdout.
- * @c: characters in string form
- *
- * Return: No of printed characters
- */
+* get_out - Free the buffer and commands taken from getline
+*@buffer: buffer taked from getline
+*@commands: command inserted
+*Return: Nothing(void)
+*/
 
-int _write(char *ptrstr)
+void get_out(char *buffer, char **commands)
 {
-int i = 0, overall = 0;
-
-while (ptrstr[i])
-{
-overall += _putchar(ptrstr[i]);
-i++;
+	free(buffer);
+	freearv(commands);
+	exit(EXIT_SUCCESS);
 }
-return (overall);
+
+/**
+* env_end - Function to frees the buffer and commands created in getline
+*@buffer: buffer from getline
+*@commands: array store commands
+*@env: enviroment variables
+*Return: Nothing(void)
+*/
+
+void env_end(char *buffer, char **commands, char **env)
+{
+	free(buffer);
+	freearv(commands);
+	print_env(env);
+	exit(EXIT_SUCCESS);
+}
+
+/**
+* _path - Function to check and execute the command inserted
+*@commands: array sotored commands
+*@buffer: buffer from getline
+*@env: enviroment variables
+*@argv: argument vector
+*@count: number of times runned the prompt
+*/
+
+void _path(char **commands, char *buffer, char **env, char **argv, int count)
+{
+	struct stat fileStat2;
+	int i = 0;
+	char **directories;
+
+	directories = store_e_variables(commands[0], env);
+	while (directories[i])
+	{
+		if (stat(directories[i], &fileStat2) == 0)
+			execve(directories[i], commands, NULL);
+		i++;
+	}
+
+	/*if command not found print error*/
+	build_message(argv, commands[0], count);
+
+	free(buffer);
+	freearv(commands);
+	freearv(directories);
+	exit(EXIT_SUCCESS);
 }
