@@ -1,1 +1,13 @@
-<mxfile host="app.diagrams.net" modified="2021-11-10T17:15:55.956Z" agent="5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36" version="15.5.0" etag="GIZI8QmFyHm61YfvUQ0x" type="github"><diagram id="i2v0ne-XVEGXPCpz8Z64">UzV2zq1wL0osyPDNT0nNUTV2VTV2LsrPL4GwciucU3NyVI0MMlNUjV1UjYwMgFjVyA2HrCFY1qAgsSg1rwSLBiADYTaQg2Y1AA==</diagram></mxfile>
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "$(readlink -f "$BASH_SOURCE")")/.."
+
+# see also ".mailmap" for how email addresses and names are deduplicated
+{
+	cat <<-'EOH'
+	# This file lists all individuals having contributed content to the repository.
+	# For how it is generated, see `scripts/generate-authors.sh`.
+	EOH
+		echo
+			git log --format='%aN <%aE>' | LC_ALL=C.UTF-8 sort -uf
+		} > AUTHORS
